@@ -1,50 +1,46 @@
 package com.example.jiraissueservice.service;
 
 import com.example.jiraissueservice.model.Issue;
+import com.example.jiraissueservice.repository.IssueRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class IssueService {
 
-    private final ConcurrentMap<String, Issue> issues = new ConcurrentHashMap<>();
+    private final IssueRepository issueRepository;
     private final WatcherNotificationService watcherNotificationService;
 
-    public IssueService(WatcherNotificationService watcherNotificationService) {
+    public IssueService(IssueRepository issueRepository, WatcherNotificationService watcherNotificationService) {
+        this.issueRepository = issueRepository;
         this.watcherNotificationService = watcherNotificationService;
     }
 
+    @Transactional(readOnly = true)
     public List<Issue> findAll() {
-        return issues.values().stream()
+        return issueRepository.findAll().stream()
                 .sorted(Comparator.comparing(Issue::getUpdatedAt).reversed())
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public Issue findById(String id) {
         return getIssueOrThrow(id);
     }
 
+    @Transactional
     public Issue create(Issue issue) {
-        String id = "JIS-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        issue.setId(id);
-        issue.setUpdatedAt(Instant.now());
-        if (issue.getWatchers() == null) {
-            issue.setWatchers(Set.of());
-        }
-        issues.put(id, issue);
-        watcherNotificationService.notifyWatchers(id, issue.getWatchers(), "created");
-        return issue;
+        Issue saved = issueRepository.save(issue);
+        watcherNotificationService.notifyWatchers(saved.getId(), saved.getWatchers(), "created");
+        return saved;
     }
 
+    @Transactional
     public Issue update(String id, Issue updatedIssue) {
         Issue existing = getIssueOrThrow(id);
         existing.setSummary(updatedIssue.getSummary());
@@ -55,40 +51,37 @@ public class IssueService {
         existing.setReporter(updatedIssue.getReporter());
         existing.setLabels(updatedIssue.getLabels());
         existing.setWatchers(updatedIssue.getWatchers());
-        existing.setUpdatedAt(Instant.now());
 
-        watcherNotificationService.notifyWatchers(id, existing.getWatchers(), "updated");
-        return existing;
+        Issue saved = issueRepository.save(existing);
+        watcherNotificationService.notifyWatchers(id, saved.getWatchers(), "updated");
+        return saved;
     }
 
+    @Transactional
     public void delete(String id) {
-        Issue removed = issues.remove(id);
-        if (removed == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Issue not found: " + id);
-        }
+        Issue removed = getIssueOrThrow(id);
+        issueRepository.delete(removed);
         watcherNotificationService.notifyWatchers(id, removed.getWatchers(), "deleted");
     }
 
+    @Transactional
     public Issue addWatcher(String id, String watcher) {
         Issue issue = getIssueOrThrow(id);
         issue.getWatchers().add(watcher);
-        issue.setUpdatedAt(Instant.now());
+        Issue saved = issueRepository.save(issue);
         watcherNotificationService.notifyWatchers(id, List.of(watcher), "watcher-added");
-        return issue;
+        return saved;
     }
 
+    @Transactional
     public Issue removeWatcher(String id, String watcher) {
         Issue issue = getIssueOrThrow(id);
         issue.getWatchers().remove(watcher);
-        issue.setUpdatedAt(Instant.now());
-        return issue;
+        return issueRepository.save(issue);
     }
 
     private Issue getIssueOrThrow(String id) {
-        Issue issue = issues.get(id);
-        if (issue == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Issue not found: " + id);
-        }
-        return issue;
+        return issueRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Issue not found: " + id));
     }
 }

@@ -4,6 +4,7 @@ A Spring Boot microservice with a lightweight Jira-like issue UI.
 
 ## Features
 - Issue CRUD APIs (`/api/issues`)
+- Persistent relational storage with Spring Data JPA + H2
 - Jira-like single issue view in browser
 - Top navigation with **Create** action
 - Delete issue from three-dot menu in issue view (top-right)
@@ -26,6 +27,7 @@ A Spring Boot microservice with a lightweight Jira-like issue UI.
 mvn spring-boot:run
 ```
 Open: `http://localhost:8080`
+H2 Console: `http://localhost:8080/h2-console`
 
 ## API quick reference
 - `GET /api/issues`
@@ -38,7 +40,7 @@ Open: `http://localhost:8080`
 - `GET /api/issues/notifications/{watcher}`
 
 ## Next steps (AWS path)
-- Add persistent DB (RDS PostgreSQL)
+- Replace local H2 with managed RDS PostgreSQL
 - Containerize with Docker
 - Deploy on ECS Fargate or Elastic Beanstalk
 - Store frontend as static files in S3 + CloudFront (or keep served by Spring Boot)

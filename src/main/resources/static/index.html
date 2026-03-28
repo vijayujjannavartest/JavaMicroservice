@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jira Issue Service</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top-nav">
+    <div class="logo">Jira Issue Service</div>
+    <button id="createIssueBtn" class="primary">Create</button>
+</header>
+
+<main class="layout">
+    <aside class="issue-list-panel">
+        <h2>Issues</h2>
+        <ul id="issueList"></ul>
+    </aside>
+
+    <section class="issue-view" id="issueView">
+        <div class="placeholder">Select an issue from the left panel.</div>
+    </section>
+</main>
+
+<div id="issueModal" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="modalTitle">Create Issue</h3>
+        <form id="issueForm">
+            <input type="hidden" id="issueId">
+
+            <label>Summary<input id="summary" required maxlength="120"></label>
+            <label>Description<textarea id="description" rows="4"></textarea></label>
+            <label>Status<input id="status" value="To Do" required></label>
+            <label>Priority<input id="priority" value="Medium" required></label>
+            <label>Assignee<input id="assignee" required></label>
+            <label>Reporter<input id="reporter" required></label>
+            <label>Labels (comma separated)<input id="labels"></label>
+            <label>Watchers (comma separated)<input id="watchers"></label>
+
+            <div class="actions">
+                <button type="button" id="cancelBtn">Cancel</button>
+                <button type="submit" class="primary">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
